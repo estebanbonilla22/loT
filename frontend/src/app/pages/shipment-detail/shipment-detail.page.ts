@@ -11,7 +11,14 @@ import { SensorReading, Shipment } from '../../core/api.types';
   selector: 'app-shipment-detail-page',
   imports: [CommonModule, RouterLink, DatePipe, ReactiveFormsModule],
   template: `
-    @if (!shipment) {
+    @if (loadError) {
+      <div class="card">
+        <div class="muted"><a routerLink="/dashboard">← Back</a></div>
+        <h2>Could not load shipment</h2>
+        <p class="error">{{ loadError }}</p>
+        <p class="muted" style="margin-top:10px">Tip: make sure you are logged in and backend is reachable.</p>
+      </div>
+    } @else if (!shipment) {
       <p class="muted">Loading…</p>
     } @else {
       <div class="row">
@@ -109,6 +116,7 @@ export class ShipmentDetailPage implements OnInit, OnDestroy {
   readingsLoading = true;
   adding = false;
   error = '';
+  loadError = '';
   private sub?: Subscription;
 
   private readonly fb = inject(FormBuilder);
@@ -140,14 +148,23 @@ export class ShipmentDetailPage implements OnInit, OnDestroy {
     this.shipment = null;
     this.readings = [];
     this.readingsLoading = true;
+    this.loadError = '';
+
+    if (!Number.isFinite(id)) {
+      this.readingsLoading = false;
+      this.loadError = 'Invalid shipment id in URL.';
+      return;
+    }
+
     this.api.getShipment(id).subscribe({
       next: (s) => {
         this.shipment = s;
         this.refreshReadings();
       },
-      error: () => {
+      error: (err) => {
         this.shipment = null;
         this.readingsLoading = false;
+        this.loadError = err?.error?.error ?? 'Request failed (check token/CORS/backend).';
       }
     });
   }
