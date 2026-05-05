@@ -1,6 +1,7 @@
 package com.iot.coldchain.shipment;
 
 import com.iot.coldchain.shipment.dto.CreateShipmentRequest;
+import com.iot.coldchain.web.NotFoundException;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +19,7 @@ public class ShipmentService {
   }
 
   public Shipment get(Long id) {
-    return shipmentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Shipment not found"));
+    return shipmentRepository.findById(id).orElseThrow(() -> new NotFoundException("Shipment not found"));
   }
 
   public Shipment create(CreateShipmentRequest req) {

@@ -3,6 +3,7 @@ package com.iot.coldchain.reading;
 import com.iot.coldchain.reading.dto.CreateSensorReadingRequest;
 import com.iot.coldchain.shipment.Shipment;
 import com.iot.coldchain.shipment.ShipmentService;
+import com.iot.coldchain.web.NotFoundException;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,7 @@ public class SensorReadingService {
   }
 
   public SensorReading get(Long id) {
-    return sensorReadingRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Sensor reading not found"));
+    return sensorReadingRepository.findById(id).orElseThrow(() -> new NotFoundException("Sensor reading not found"));
   }
 
   @Transactional
