@@ -25,7 +25,7 @@ services:
       APP_JWT_ISSUER: "coldchain-api"
       APP_JWT_EXPIRATION_SECONDS: 86400
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       - db
 
