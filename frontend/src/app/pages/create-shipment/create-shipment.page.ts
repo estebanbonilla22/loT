@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { timeout } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -81,12 +82,19 @@ export class CreateShipmentPage {
       destination: v.destination!,
       minTemperature: Number(v.minTemperature),
       maxTemperature: Number(v.maxTemperature)
-    }).subscribe({
+    }).pipe(
+      timeout({ first: 10000 })
+    ).subscribe({
       next: (shipment) => {
+        this.loading = false;
         this.router.navigate(['/shipments', shipment.id]);
       },
       error: (err) => {
-        this.error = err?.error?.error ?? 'Create shipment failed';
+        if (err?.name === 'TimeoutError') {
+          this.error = 'Backend not responding. Check Docker backend is up on http://localhost:8082.';
+        } else {
+          this.error = err?.error?.error ?? 'Create shipment failed';
+        }
         this.loading = false;
       }
     });
