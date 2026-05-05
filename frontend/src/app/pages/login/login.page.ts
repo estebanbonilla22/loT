@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { finalize, timeout } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -58,15 +59,32 @@ export class LoginPage {
     if (this.form.invalid) return;
     this.loading = true;
 
-    const { username, password } = this.form.getRawValue();
-    this.api.login(username!, password!).subscribe({
+    const raw = this.form.getRawValue();
+    const username = (raw.username ?? '').trim();
+    const password = raw.password ?? '';
+
+    if (!username || !password) {
+      this.error = 'Username and password are required';
+      this.loading = false;
+      return;
+    }
+
+    this.api
+      .login(username, password)
+      .pipe(
+        timeout({ first: 10000 }),
+        finalize(() => (this.loading = false))
+      )
+      .subscribe({
       next: (res) => {
-        this.loading = false;
         this.auth.setToken(res.token);
         this.router.navigateByUrl('/dashboard');
       },
       error: (err) => {
-        this.loading = false;
+        if (err?.name === 'TimeoutError') {
+          this.error = 'Login request timed out. Check backend is reachable.';
+          return;
+        }
         const serverMsg =
           err?.error?.error ??
           err?.error?.message ??
