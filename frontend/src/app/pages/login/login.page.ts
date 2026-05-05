@@ -4,7 +4,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { finalize } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -60,14 +59,14 @@ export class LoginPage {
     this.loading = true;
 
     const { username, password } = this.form.getRawValue();
-    this.api.login(username!, password!).pipe(
-      finalize(() => (this.loading = false))
-    ).subscribe({
+    this.api.login(username!, password!).subscribe({
       next: (res) => {
+        this.loading = false;
         this.auth.setToken(res.token);
         this.router.navigateByUrl('/dashboard');
       },
       error: (err) => {
+        this.loading = false;
         const serverMsg =
           err?.error?.error ??
           err?.error?.message ??
