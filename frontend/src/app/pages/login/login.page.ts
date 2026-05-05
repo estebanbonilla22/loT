@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
-import { finalize, timeout } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -54,44 +54,39 @@ export class LoginPage {
     private readonly router: Router
   ) {}
 
-  submit() {
+  async submit() {
     this.error = '';
     if (this.form.invalid) return;
     this.loading = true;
 
-    const raw = this.form.getRawValue();
-    const username = (raw.username ?? '').trim();
-    const password = raw.password ?? '';
+    try {
+      const raw = this.form.getRawValue();
+      const username = (raw.username ?? '').trim();
+      const password = raw.password ?? '';
 
-    if (!username || !password) {
-      this.error = 'Username and password are required';
-      this.loading = false;
-      return;
-    }
+      if (!username || !password) {
+        this.error = 'Username and password are required';
+        return;
+      }
 
-    this.api
-      .login(username, password)
-      .pipe(
-        timeout({ first: 10000 }),
-        finalize(() => (this.loading = false))
-      )
-      .subscribe({
-      next: (res) => {
-        this.auth.setToken(res.token);
-        this.router.navigateByUrl('/dashboard');
-      },
-      error: (err) => {
-        if (err?.name === 'TimeoutError') {
-          this.error = 'Login request timed out. Check backend is reachable.';
-          return;
-        }
+      const res = await firstValueFrom(
+        this.api.login(username, password).pipe(timeout({ first: 10000 }))
+      );
+      this.auth.setToken(res.token);
+      await this.router.navigateByUrl('/dashboard');
+    } catch (err: any) {
+      if (err?.name === 'TimeoutError') {
+        this.error = 'Login request timed out. Check backend is reachable.';
+      } else {
         const serverMsg =
           err?.error?.error ??
           err?.error?.message ??
           (typeof err?.error === 'string' ? err.error : null);
         this.error = serverMsg ?? `Login failed${err?.status ? ` (HTTP ${err.status})` : ''}`;
       }
-    });
+    } finally {
+      this.loading = false;
+    }
   }
 }
 
