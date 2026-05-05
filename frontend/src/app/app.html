@@ -1,0 +1,21 @@
+<div class="layout">
+  <header class="topbar">
+    <div class="brand" routerLink="/dashboard">
+      <div class="logo">❄</div>
+      <div>
+        <div class="title">Cold Chain Monitor</div>
+        <div class="subtitle">IoT Logistics</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/shipments/new" routerLinkActive="active">New shipment</a>
+      <button class="linklike" type="button" (click)="logout()">Logout</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <router-outlet />
+  </main>
+</div>
+

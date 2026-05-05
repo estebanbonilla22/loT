@@ -1,0 +1,46 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:coldchain;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  h2:
+    console:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  jwt:
+    # For demo purposes only. In cloud, set APP_JWT_SECRET env var to a long random value.
+    secret: ${APP_JWT_SECRET:change-me-change-me-change-me-change-me-change-me}
+    issuer: ${APP_JWT_ISSUER:coldchain-api}
+    expiration-seconds: ${APP_JWT_EXPIRATION_SECONDS:86400}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:db}:${DB_PORT:5432}/${DB_NAME:coldchain}
+    username: ${DB_USER:coldchain}
+    password: ${DB_PASSWORD:coldchain}
+  jpa:
+    hibernate:
+      ddl-auto: update
+
