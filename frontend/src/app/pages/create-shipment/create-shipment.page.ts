@@ -87,7 +87,7 @@ export class CreateShipmentPage {
     ).subscribe({
       next: (shipment) => {
         this.loading = false;
-        this.router.navigate(['/shipments', shipment.id]);
+        this.router.navigateByUrl('/dashboard');
       },
       error: (err) => {
         if (err?.name === 'TimeoutError') {
