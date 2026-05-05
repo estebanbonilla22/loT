@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4201",
+    "start:prod": "ng build && npx -y http-server dist/frontend -p 4201 -c-1",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
