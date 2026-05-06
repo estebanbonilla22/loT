@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { SensorReading, Shipment } from '../../core/api.types';
 
 @Component({
@@ -78,33 +79,38 @@ import { SensorReading, Shipment } from '../../core/api.types';
         </div>
 
         <div class="card">
-          <h3 style="margin-top:0">Add sensor reading</h3>
-          <p class="muted">If temperature is out of range, shipment becomes <b>ALERT</b>.</p>
+          @if (auth.isAdmin()) {
+            <h3 style="margin-top:0">Add sensor reading</h3>
+            <p class="muted">If temperature is out of range, shipment becomes <b>ALERT</b>.</p>
 
-          <form [formGroup]="form" (ngSubmit)="addReading()" style="margin-top: 12px">
-            <div class="field">
-              <label>Temperature (°C)</label>
-              <input type="number" formControlName="temperature" />
-            </div>
-            <div class="field">
-              <label>Humidity (%)</label>
-              <input type="number" formControlName="humidity" />
-            </div>
-            <div class="field">
-              <label>Latitude</label>
-              <input type="number" formControlName="latitude" />
-            </div>
-            <div class="field">
-              <label>Longitude</label>
-              <input type="number" formControlName="longitude" />
-            </div>
+            <form [formGroup]="form" (ngSubmit)="addReading()" style="margin-top: 12px">
+              <div class="field">
+                <label>Temperature (°C)</label>
+                <input type="number" formControlName="temperature" />
+              </div>
+              <div class="field">
+                <label>Humidity (%)</label>
+                <input type="number" formControlName="humidity" />
+              </div>
+              <div class="field">
+                <label>Latitude</label>
+                <input type="number" formControlName="latitude" />
+              </div>
+              <div class="field">
+                <label>Longitude</label>
+                <input type="number" formControlName="longitude" />
+              </div>
 
-            @if (error) { <div class="error" style="margin-bottom: 10px">{{ error }}</div> }
+              @if (error) { <div class="error" style="margin-bottom: 10px">{{ error }}</div> }
 
-            <button class="btn primary" type="submit" [disabled]="form.invalid || adding">
-              {{ adding ? 'Adding…' : 'Add reading' }}
-            </button>
-          </form>
+              <button class="btn primary" type="submit" [disabled]="form.invalid || adding">
+                {{ adding ? 'Adding…' : 'Add reading' }}
+              </button>
+            </form>
+          } @else {
+            <h3 style="margin-top:0">Viewer access</h3>
+            <p class="muted">You can review readings and <b>ALERT</b> status. Only administrators can add sensor data.</p>
+          }
         </div>
       </div>
     }
@@ -120,6 +126,7 @@ export class ShipmentDetailPage implements OnInit, OnDestroy {
   private sub?: Subscription;
 
   private readonly fb = inject(FormBuilder);
+  readonly auth = inject(AuthService);
 
   form = this.fb.group({
     temperature: [5, [Validators.required]],

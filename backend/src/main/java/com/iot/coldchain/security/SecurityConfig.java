@@ -36,11 +36,21 @@ public class SecurityConfig {
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/").permitAll()
             .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/shipments").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/shipments/*").authenticated()
+            .requestMatchers(HttpMethod.POST, "/api/shipments").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/shipments/*").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.DELETE, "/api/shipments/*").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.GET, "/api/readings").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/readings/*").authenticated()
+            .requestMatchers(HttpMethod.POST, "/api/readings").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.PUT, "/api/readings/*").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.DELETE, "/api/readings/*").hasRole("ADMIN")
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
         .build();
   }
 }
-

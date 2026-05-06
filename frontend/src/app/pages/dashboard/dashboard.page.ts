@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
 import { Shipment } from '../../core/api.types';
 
 @Component({
@@ -16,7 +17,9 @@ import { Shipment } from '../../core/api.types';
             <h2 style="margin:0">Shipments</h2>
             <div class="muted">Refrigerated shipments being monitored</div>
           </div>
-          <a class="btn primary" routerLink="/shipments/new">Create shipment</a>
+          @if (auth.isAdmin()) {
+            <a class="btn primary" routerLink="/shipments/new">Create shipment</a>
+          }
         </div>
 
         @if (loading) {
@@ -51,9 +54,13 @@ import { Shipment } from '../../core/api.types';
                     </td>
                     <td class="muted">{{ s.createdAt | date: 'short' }}</td>
                     <td style="text-align:right">
-                      <button class="btn" type="button" (click)="remove(s)" [disabled]="deletingId===s.id">
-                        {{ deletingId===s.id ? 'Deleting…' : 'Delete' }}
-                      </button>
+                      @if (auth.isAdmin()) {
+                        <button class="btn" type="button" (click)="remove(s)" [disabled]="deletingId===s.id">
+                          {{ deletingId===s.id ? 'Deleting…' : 'Delete' }}
+                        </button>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
                     </td>
                   </tr>
                 }
@@ -66,9 +73,14 @@ import { Shipment } from '../../core/api.types';
       <div class="card">
         <h3 style="margin-top:0">Live demo tips</h3>
         <ol class="muted">
-          <li>Create a shipment with 2–8°C.</li>
-          <li>Open the shipment detail page.</li>
-          <li>Add a reading with temperature 20°C to trigger <b>ALERT</b>.</li>
+          @if (auth.isAdmin()) {
+            <li>Create a shipment with 2–8°C.</li>
+            <li>Open the shipment detail page.</li>
+            <li>Add a reading with temperature 20°C to trigger <b>ALERT</b>.</li>
+          } @else {
+            <li>You have <b>viewer</b> access: see shipments and temperature alerts.</li>
+            <li>Ask an <b>administrator</b> to create shipments or add sensor readings.</li>
+          }
         </ol>
       </div>
     </div>
@@ -78,6 +90,8 @@ export class DashboardPage implements OnInit {
   loading = true;
   shipments: Shipment[] = [];
   deletingId: number | null = null;
+
+  readonly auth = inject(AuthService);
 
   constructor(private readonly api: ApiService) {}
 
@@ -92,9 +106,10 @@ export class DashboardPage implements OnInit {
         this.shipments = res;
         this.loading = false;
       },
-      error: () => {
+      error: (err) => {
         this.shipments = [];
         this.loading = false;
+        console.error('listShipments', err);
       }
     });
   }
@@ -107,9 +122,10 @@ export class DashboardPage implements OnInit {
         this.deletingId = null;
         this.refresh();
       },
-      error: () => {
+      error: (err) => {
         this.deletingId = null;
-        alert('Delete failed');
+        console.error('deleteShipment', err);
+        alert('Delete failed (admin only, or session expired)');
       }
     });
   }

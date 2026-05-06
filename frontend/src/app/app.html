@@ -8,6 +8,9 @@
       </div>
     </div>
     <nav class="nav">
+      @if (auth.isLoggedIn()) {
+        <span class="role-pill">{{ auth.roleLabel() }}</span>
+      }
       <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
       <button class="linklike" type="button" (click)="logout()">Logout</button>
     </nav>

@@ -48,10 +48,18 @@ npm start
 ```
 
 Frontend:
-- `http://localhost:4200`
+- **`http://localhost:4201`** (default port in this repo)
 
 Backend URL used by Angular:
 - edit `frontend/src/environments/environment.ts`
+
+### If you see “Content Security Policy blocks eval”
+
+The app includes a **relaxed CSP in `index.html`** so `ng serve` works with browsers/extensions that default to strict rules. Hot module replacement is **off** by default (`hmr: false`) to reduce eval usage.
+
+- Normal dev: `npm start`
+- With HMR (if your browser allows eval): `npm run start:hmr`
+- No dev server / no eval at all: `npm run start:prod`
 
 ---
 
@@ -74,6 +82,19 @@ Backend URL used by Angular:
 2) Create a shipment with range **2–8°C**.
 3) Open the shipment detail page.
 4) Add a sensor reading with temperature **20°C** → shipment becomes **ALERT**.
+
+---
+
+## Enlace del despliegue (para entregar al profesor)
+
+La **URL base** del API en AWS es la del **Application Load Balancer** (la que devuelve CloudFormation en `ApiUrl`), por ejemplo:
+
+- **Raíz (información del servicio):** `http://<tu-alb-dns>/` → JSON con rutas útiles (requiere imagen backend actualizada con `RootController`).
+- **Salud (siempre recomendable):** `http://<tu-alb-dns>/actuator/health` → `{"status":"UP"}`.
+
+Si abres solo `http://<tu-alb-dns>/` en un navegador y ves **403**, es una versión antigua del backend (antes la raíz exigía JWT). Vuelve a desplegar con `deploy/aws/update-backend-image.ps1` o indica al profesor que use **`/actuator/health`** como prueba de que el API está arriba.
+
+El **frontend Angular** en este repo corre en local (`http://localhost:4201`); no es un segundo enlace en AWS salvo que lo subas aparte (S3/CloudFront, etc.).
 
 ---
 

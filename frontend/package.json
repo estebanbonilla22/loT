@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --port 4201",
+    "start": "ng serve --port 4201 --hmr false",
+    "start:hmr": "ng serve --port 4201 --hmr",
     "start:prod": "ng build && npx -y http-server dist/frontend -p 4201 -c-1",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",

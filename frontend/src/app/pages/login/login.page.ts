@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
+import { httpErrorMessage } from '../../core/http-error.util';
 import { firstValueFrom, timeout } from 'rxjs';
 
 @Component({
@@ -26,10 +27,12 @@ import { firstValueFrom, timeout } from 'rxjs';
             <input type="password" formControlName="password" placeholder="••••••••" />
           </div>
 
-          @if (error) { <div class="error" style="margin-bottom: 10px">{{ error }}</div> }
+          @if (error()) {
+            <div class="error" style="margin-bottom: 10px" role="alert">{{ error() }}</div>
+          }
 
-          <button class="btn primary" type="submit" [disabled]="form.invalid || loading">
-            {{ loading ? 'Signing in…' : 'Login' }}
+          <button class="btn primary" type="submit" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Signing in…' : 'Login' }}
           </button>
           <a class="btn" routerLink="/register" style="margin-left: 10px">Create account</a>
         </form>
@@ -38,8 +41,8 @@ import { firstValueFrom, timeout } from 'rxjs';
   `
 })
 export class LoginPage {
-  loading = false;
-  error = '';
+  readonly loading = signal(false);
+  readonly error = signal('');
 
   private readonly fb = inject(FormBuilder);
 
@@ -55,9 +58,9 @@ export class LoginPage {
   ) {}
 
   async submit() {
-    this.error = '';
+    this.error.set('');
     if (this.form.invalid) return;
-    this.loading = true;
+    this.loading.set(true);
 
     try {
       const raw = this.form.getRawValue();
@@ -65,7 +68,7 @@ export class LoginPage {
       const password = raw.password ?? '';
 
       if (!username || !password) {
-        this.error = 'Username and password are required';
+        this.error.set('Username and password are required');
         return;
       }
 
@@ -74,19 +77,14 @@ export class LoginPage {
       );
       this.auth.setToken(res.token);
       await this.router.navigateByUrl('/dashboard');
-    } catch (err: any) {
-      if (err?.name === 'TimeoutError') {
-        this.error = 'Login request timed out. Check backend is reachable.';
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && (err as { name?: string }).name === 'TimeoutError') {
+        this.error.set('Login request timed out. Check backend is reachable.');
       } else {
-        const serverMsg =
-          err?.error?.error ??
-          err?.error?.message ??
-          (typeof err?.error === 'string' ? err.error : null);
-        this.error = serverMsg ?? `Login failed${err?.status ? ` (HTTP ${err.status})` : ''}`;
+        this.error.set(httpErrorMessage(err, 'Login failed'));
       }
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 }
-

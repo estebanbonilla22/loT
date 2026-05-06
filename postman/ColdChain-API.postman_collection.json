@@ -1,0 +1,755 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-cold-chain-iot-api",
+    "name": "Cold Chain IoT API",
+    "description": "Pruebas para la API Spring Boot (JWT). Importa la colección y el entorno Local.\n\n**Orden recomendado:** ejecuta la carpeta completa con Collection Runner (orden de carpetas), o al menos **Auth → Register** antes del resto.\n\nVariables de colección: `baseUrl`, `token`, `username`, `password`, `shipmentId`, `shipmentId2`, `readingId`, `readingId2`.\n\n**CLI:** `npx newman run postman/ColdChain-API.postman_collection.json --env-var baseUrl=http://localhost:8082`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8082" },
+    { "key": "token", "value": "" },
+    { "key": "username", "value": "" },
+    { "key": "password", "value": "TestPass123!" },
+    { "key": "shipmentId", "value": "" },
+    { "key": "shipmentId2", "value": "" },
+    { "key": "readingId", "value": "" },
+    { "key": "readingId2", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET actuator health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status UP', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/actuator/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Shipments sin token (403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Sin JWT -> 403', function () { pm.response.to.have.status(403); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments"
+          }
+        },
+        {
+          "name": "Register (usuario único)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('username', 'pmuser_' + Date.now());",
+                  "pm.collectionVariables.set('password', 'TestPass123!');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Tiene token JWT', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j).to.have.property('token');",
+                  "    pm.expect(j.token).to.be.a('string');",
+                  "    pm.expect(j.token.length).to.be.above(20);",
+                  "    pm.collectionVariables.set('token', j.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Register duplicado (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Mensaje de error', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Login OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Token en login', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.token).to.be.a('string');",
+                  "    pm.collectionVariables.set('token', j.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Login credenciales inválidas (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Error invalid credentials', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.error).to.include('Invalid');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"WrongPassword___\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipments",
+      "item": [
+        {
+          "name": "List shipments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta es array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments"
+          }
+        },
+        {
+          "name": "Create shipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Shipment creado con id y status OK', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.id).to.be.a('number');",
+                  "    pm.expect(j.status).to.eql('OK');",
+                  "    pm.expect(j.minTemperature).to.eql(2);",
+                  "    pm.expect(j.maxTemperature).to.eql(8);",
+                  "    pm.collectionVariables.set('shipmentId', String(j.id));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Vacunas\",\n  \"origin\": \"Bogotá\",\n  \"destination\": \"Medellín\",\n  \"minTemperature\": 2,\n  \"maxTemperature\": 8\n}"
+            },
+            "url": "{{baseUrl}}/api/shipments"
+          }
+        },
+        {
+          "name": "Get shipment by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Coincide id y producto', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.id).to.eql(Number(pm.collectionVariables.get('shipmentId')));",
+                  "    pm.expect(j.productName).to.eql('Vacunas');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Update shipment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Nombre actualizado', function () {",
+                  "    pm.expect(pm.response.json().productName).to.eql('Vacunas actualizadas');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Vacunas actualizadas\",\n  \"origin\": \"Bogotá\",\n  \"destination\": \"Medellín\",\n  \"minTemperature\": 2,\n  \"maxTemperature\": 8\n}"
+            },
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Create second shipment (para validar reading)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set('shipmentId2', String(pm.response.json().id));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productName\": \"Otro lote\",\n  \"origin\": \"Cali\",\n  \"destination\": \"Cartagena\",\n  \"minTemperature\": 0,\n  \"maxTemperature\": 10\n}"
+            },
+            "url": "{{baseUrl}}/api/shipments"
+          }
+        },
+        {
+          "name": "Get shipment inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });",
+                  "pm.test('Body error', function () {",
+                  "    pm.expect(pm.response.json().error).to.include('Shipment');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/999999999"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Readings",
+      "item": [
+        {
+          "name": "Create reading temperatura OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Reading vinculado al shipment', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.shipmentId).to.eql(Number(pm.collectionVariables.get('shipmentId')));",
+                  "    pm.expect(j.temperature).to.eql(5);",
+                  "    pm.collectionVariables.set('readingId', String(j.id));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId}},\n  \"temperature\": 5,\n  \"humidity\": 60,\n  \"latitude\": 4.711,\n  \"longitude\": -74.0721\n}"
+            },
+            "url": "{{baseUrl}}/api/readings"
+          }
+        },
+        {
+          "name": "Shipment sigue OK tras lectura en rango",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status OK', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('OK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Create reading temperatura fuera de rango (ALERT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Lectura guardada', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.temperature).to.eql(15);",
+                  "    pm.collectionVariables.set('readingId2', String(j.id));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId}},\n  \"temperature\": 15,\n  \"humidity\": 55,\n  \"latitude\": 4.711,\n  \"longitude\": -74.0721\n}"
+            },
+            "url": "{{baseUrl}}/api/readings"
+          }
+        },
+        {
+          "name": "Shipment en ALERT tras temperatura alta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status ALERT', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('ALERT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "List readings by shipmentId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Al menos 2 lecturas', function () {",
+                  "    var arr = pm.response.json();",
+                  "    pm.expect(arr.length).to.be.at.least(2);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/readings?shipmentId={{shipmentId}}"
+          }
+        },
+        {
+          "name": "Get reading by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Ids coherentes', function () {",
+                  "    var j = pm.response.json();",
+                  "    pm.expect(j.id).to.eql(Number(pm.collectionVariables.get('readingId')));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/readings/{{readingId}}"
+          }
+        },
+        {
+          "name": "Update reading vuelve temperatura a rango (shipment OK)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Temperatura actualizada', function () {",
+                  "    pm.expect(pm.response.json().temperature).to.eql(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId}},\n  \"temperature\": 5,\n  \"humidity\": 58,\n  \"latitude\": 4.711,\n  \"longitude\": -74.0721\n}"
+            },
+            "url": "{{baseUrl}}/api/readings/{{readingId}}"
+          }
+        },
+        {
+          "name": "Shipment vuelve a OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Status OK de nuevo', function () {",
+                  "    pm.expect(pm.response.json().status).to.eql('OK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Update reading cambiar shipmentId (400)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('No se puede cambiar shipment', function () {",
+                  "    pm.expect(pm.response.json().error).to.include('shipmentId');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": {{shipmentId2}},\n  \"temperature\": 5,\n  \"humidity\": 58,\n  \"latitude\": 4.711,\n  \"longitude\": -74.0721\n}"
+            },
+            "url": "{{baseUrl}}/api/readings/{{readingId}}"
+          }
+        },
+        {
+          "name": "Get reading inexistente (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404', function () { pm.response.to.have.status(404); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/readings/999999999"
+          }
+        },
+        {
+          "name": "Delete reading (primera)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', function () { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/readings/{{readingId}}"
+          }
+        },
+        {
+          "name": "Delete reading (segunda)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', function () { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/readings/{{readingId2}}"
+          }
+        },
+        {
+          "name": "Delete shipment 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', function () { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId}}"
+          }
+        },
+        {
+          "name": "Delete shipment 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', function () { pm.response.to.have.status(204); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/shipments/{{shipmentId2}}"
+          }
+        }
+      ]
+    }
+  ]
+}

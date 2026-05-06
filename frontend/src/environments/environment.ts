@@ -1,4 +1,4 @@
 export const environment = {
-  apiBaseUrl: 'http://localhost:8082'
+  apiBaseUrl: 'http://coldchain-backend-alb-1729726361.us-east-1.elb.amazonaws.com'
 };
 

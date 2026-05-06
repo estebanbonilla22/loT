@@ -5,6 +5,7 @@ import com.iot.coldchain.auth.dto.RegisterRequest;
 import com.iot.coldchain.security.JwtService;
 import com.iot.coldchain.user.AppUser;
 import com.iot.coldchain.user.UserRepository;
+import com.iot.coldchain.user.UserRole;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +25,9 @@ public class AuthService {
     if (userRepository.existsByUsername(req.username())) {
       throw new IllegalArgumentException("Username already exists");
     }
-    AppUser user = new AppUser(req.username(), passwordEncoder.encode(req.password()));
+    AppUser user = new AppUser(req.username(), passwordEncoder.encode(req.password()), UserRole.USER);
     userRepository.save(user);
-    return jwtService.generateToken(user.getUsername());
+    return jwtService.generateToken(user);
   }
 
   public String login(LoginRequest req) {
@@ -35,7 +36,7 @@ public class AuthService {
     if (!passwordEncoder.matches(req.password(), user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
-    return jwtService.generateToken(user.getUsername());
+    return jwtService.generateToken(user);
   }
 }
 

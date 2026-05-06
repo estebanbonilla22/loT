@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 import { LoginPage } from './pages/login/login.page';
 import { RegisterPage } from './pages/register/register.page';
 import { DashboardPage } from './pages/dashboard/dashboard.page';
@@ -13,7 +14,7 @@ export const routes: Routes = [
   { path: 'register', component: RegisterPage },
 
   { path: 'dashboard', canActivate: [authGuard], component: DashboardPage },
-  { path: 'shipments/new', canActivate: [authGuard], component: CreateShipmentPage },
+  { path: 'shipments/new', canActivate: [authGuard, adminGuard], component: CreateShipmentPage },
   { path: 'shipments/:id', canActivate: [authGuard], component: ShipmentDetailPage },
 
   { path: '**', redirectTo: 'dashboard' }
